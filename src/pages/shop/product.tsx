@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useContext, useReducer, Dispatch } from 'react'
 import { ProductItem } from '../../products'
 import './product.css'
+import { useCartItemsDispatch } from '../../context/shop-context'
 
 
 type ProductItemProps = {
@@ -10,6 +11,7 @@ type ProductItemProps = {
 export const Product = ({
     item
 }: ProductItemProps) => {
+  const dispatch = useCartItemsDispatch();
   return (
     <div className='product'>
         <img src={item.imageUrl} />
@@ -17,6 +19,12 @@ export const Product = ({
             <p><b>{item.name}</b></p>
             <p>${item.price}</p>
         </div>
+        <button className='addToCartBtn' onClick={() => {
+          dispatch({
+            type: 'add',
+            item: item
+          })
+        }}>Add To Cart</button>
     </div>
   )
 }
