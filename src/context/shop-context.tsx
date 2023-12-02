@@ -1,20 +1,29 @@
 
-import React, { Context, ReactNode, createContext, useContext, useReducer, useState } from 'react'
+import React, { Context, ReactNode, createContext, useContext, useReducer, useEffect } from 'react'
 import { PRODUCTS, ProductItem } from '../products';
 import { Product } from '../pages/shop/product';
 
-type CartItemType = 'add' | 'change' | 'remove';
+type CartItemType = 'add' | 'remove' | 'clear';
 
 type CartItemAction = {
     type: CartItemType;
     item: ProductItem;
 }
 
-export const CartItemsContext = createContext<ProductItem[] | null>(null);
+export const CartItemsContext = createContext<ProductItem[]>([]);
 export const CartItemsDispatchContext = createContext<React.Dispatch<CartItemAction> | null>(null);
 
 export const ShopContextProvider = ({ children }: any) => {
-    const [cartItems, dispatch] = useReducer(cartItemsReducer, []);
+    const cartItemsFromLocalStorage = localStorage.getItem('cartItems');
+    // console.log('ShopContextProvider :: cartItemsFromLocalStorage', cartItemsFromLocalStorage);
+
+    const initCartItems = cartItemsFromLocalStorage ? JSON.parse(cartItemsFromLocalStorage) : [];
+    const [cartItems, dispatch] = useReducer(cartItemsReducer, initCartItems);
+    // console.log('ShopContextProvider :: cartItems', cartItems);
+
+    useEffect(() => {
+        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    }, [cartItems]);
 
     return (
         <CartItemsContext.Provider value={cartItems}>
@@ -44,15 +53,15 @@ export function useCartItemsDispatch() {
 export const cartItemsReducer = (cartItems: ProductItem[], action: CartItemAction): ProductItem[] => {
     switch (action.type) {
         case 'add': {
-            console.log(action);
-            return [...cartItems, {...action.item, quantity: action.item.quantity++}];
-        }
-        case 'change': {
-            // TODO: handle update quantity here...
-            return cartItems;
+            const isAlreadyInCart = cartItems.find((cartItem) => cartItem.id === action.item.id);
+            const quantity = isAlreadyInCart ? action.item.quantity++ : 1
+            return [...cartItems, {...action.item, quantity}];
         }
         case 'remove': {
             return cartItems.filter(item => item.id !== action.item.id);
+        }
+        case 'clear': {
+            return [];
         }
         default: {
             throw new Error('Unknown action: ' + action.type);
